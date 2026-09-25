@@ -24,6 +24,23 @@ except ImportError:
 
 
 # ================================================================
+# 结构化输出
+# ================================================================
+from pydantic import BaseModel, Field
+
+
+# 使用结构输出，让大模型在回答时自己判断是否压缩
+class AgentResponse(BaseModel):
+    content: str = Field(
+        description="给用户的最终回答"
+    )
+
+    need_compression: bool = Field(
+        description="当前历史上下文是否需要进行语义压缩"
+    )
+
+
+# ================================================================
 # Model
 # ================================================================
 
@@ -33,6 +50,11 @@ model = ChatDeepSeek(
     max_tokens=None,
     timeout=None,
     max_retries=2,
+    extra_body={
+        "thinking": {
+            "type": "disabled"
+        }
+    } 
 )
 
 
@@ -44,6 +66,7 @@ model = ChatDeepSeek(
 def is_fibonacci(n: int) -> bool:
     """判断一个整数是否是斐波那契数。"""
 
+    print("Tool Called")
     if n < 0:
         return False
 
@@ -62,6 +85,8 @@ def is_fibonacci(n: int) -> bool:
 model_with_tools = model.bind_tools([
     is_fibonacci
 ])
+
+structured_model = model_with_tools.with_structured_output(AgentResponse)
 
 
 # ================================================================
@@ -181,6 +206,8 @@ def print_context():
     )
 
     print("==============================\n")
+
+
 
 
 # ================================================================
@@ -319,7 +346,7 @@ while True:
             *ctx.get_messages(),
         ]
 
-        ai_msg = model_with_tools.invoke(
+        ai_msg = structured_model.invoke(
             messages
         )
 
@@ -335,7 +362,7 @@ while True:
 
     print(
         "AI：",
-        ai_msg.content
+        ai_msg
     )
 
     # ------------------------------------------------------------
@@ -360,3 +387,4 @@ while True:
             "[ContextManager] "
             "压缩完成。"
         )
+

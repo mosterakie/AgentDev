@@ -11,8 +11,8 @@ class ContextManager:
 
     def __init__(
         self,
-        max_tokens=100,
-        keep_recent=3,
+        max_tokens=8000,
+        keep_recent=10,
         summarizer: Optional[Callable[[str, str], str]] = None,
     ):
         self.max_tokens = max_tokens
